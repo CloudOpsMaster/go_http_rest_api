@@ -9,7 +9,6 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
-
 )
 
 var products = []Product{
@@ -123,5 +122,14 @@ func deleteProduct(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "405 method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	fmt.Println("Delete product")
+
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	for index, item := range products {
+		if item.Id == params["id"] {
+			products = append(products[:index], products[index+1:]...)
+			break
+		}
+	}
+	json.NewEncoder(w).Encode(products)
 }
