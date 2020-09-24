@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -9,6 +10,15 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+	_ "github.com/lib/pq"
+)
+
+const (
+	host     = "localhost"
+	port     = 5443
+	user     = "postgres"
+	password = "555555"
+	dbname   = "store"
 )
 
 var products = []Product{
@@ -37,6 +47,25 @@ func test(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 
+	// postgres
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+		"password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
+	db, err := sql.Open("postgres", psqlInfo)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Successfully connected!")
+
+	// router
+
 	r := mux.NewRouter()
 
 	r.HandleFunc("/products", getProducts).Methods("GET")
@@ -45,9 +74,9 @@ func main() {
 	r.HandleFunc("/product/{id}", updateProduct).Methods("PUT")
 	r.HandleFunc("/product/{id}", deleteProduct).Methods("DELETE")
 
+	// server
 	fmt.Printf("Start server \n")
 
-	//log.Fatal(http.ListenAndServe(":8080", r))
 	if err := http.ListenAndServe(":8080", r); err != nil {
 		log.Fatal(err)
 	}
