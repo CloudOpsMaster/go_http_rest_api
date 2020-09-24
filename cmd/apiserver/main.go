@@ -4,9 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
+
 )
 
 var products = []Product{
@@ -39,9 +42,9 @@ func main() {
 
 	r.HandleFunc("/products", getProducts).Methods("GET")
 	r.HandleFunc("/product/{id}", getProduct).Methods("GET")
-	r.HandleFunc("/products", createProduct).Methods("POST")
-	r.HandleFunc("/products/{id}", updateProduct).Methods("PUT")
-	r.HandleFunc("/products/{id}", deleteProduct).Methods("DELETE")
+	r.HandleFunc("/product", createProduct).Methods("POST")
+	r.HandleFunc("/product/{id}", updateProduct).Methods("PUT")
+	r.HandleFunc("/product/{id}", deleteProduct).Methods("DELETE")
 
 	fmt.Printf("Start server \n")
 
@@ -84,7 +87,14 @@ func createProduct(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "405 method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	fmt.Println("Create product")
+
+	w.Header().Set("Content-Type", "application/json")
+	var product Product
+	_ = json.NewDecoder(r.Body).Decode(&product)
+	product.Id = strconv.Itoa(rand.Intn(1000))
+	products = append(products, product)
+	json.NewEncoder(w).Encode(product)
+
 }
 
 func updateProduct(w http.ResponseWriter, r *http.Request) {
@@ -92,7 +102,20 @@ func updateProduct(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "405 method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	fmt.Println("Update product")
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	for index, item := range products {
+		if item.Id == params["id"] {
+			products = append(products[:index], products[index+1:]...)
+			var product Product
+			_ = json.NewDecoder(r.Body).Decode(&product)
+			product.Id = params["id"]
+			products = append(products, product)
+			json.NewEncoder(w).Encode(product)
+			return
+		}
+	}
+	json.NewEncoder(w).Encode(products)
 }
 
 func deleteProduct(w http.ResponseWriter, r *http.Request) {
