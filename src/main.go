@@ -21,19 +21,6 @@ const (
 	dbname   = "store"
 )
 
-var products = []Product{
-	Product{Id: "1", Name: "Black Pan", Category: "for school", Price: 140},
-	Product{Id: "2", Name: "Blue Pan", Category: "for school", Price: 150},
-	Product{Id: "3", Name: "Red Pan", Category: "for school", Price: 140},
-}
-
-type Product struct {
-	Id       string `json: "id"`
-	Name     string `json: "name"`
-	Category string `json: "category"`
-	Price    int    `json: "price"`
-}
-
 func test(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Request URL: " + r.RequestURI)
 	fmt.Println("Request method: " + r.Method)
@@ -43,6 +30,19 @@ func test(w http.ResponseWriter, r *http.Request) {
 	for k, v := range r.URL.Query() {
 		fmt.Println(k + " = " + v[0])
 	}
+}
+
+type Product struct {
+	Id       string `json: "id"`
+	Name     string `json: "name"`
+	Category string `json: "category"`
+	Price    int    `json: "price"`
+}
+
+var products = []Product{
+	Product{Id: "1", Name: "Black Pan", Category: "for school", Price: 140},
+	Product{Id: "2", Name: "Blue Pan", Category: "for school", Price: 150},
+	Product{Id: "3", Name: "Red Pan", Category: "for school", Price: 140},
 }
 
 func main() {
@@ -89,7 +89,45 @@ func getProducts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(products)
+
+	// postgres
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+		"password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
+	db, err := sql.Open("postgres", psqlInfo)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		panic(err)
+	}
+
+	rows, err := db.Query("select * from products")
+	if err != nil {
+		panic(err)
+	}
+
+	defer rows.Close()
+	products := []Product{}
+
+	for rows.Next() {
+		p := Product{}
+		err := rows.Scan(&p.Id, &p.Name, &p.Category, &p.Price)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		products = append(products, p)
+	}
+
+	for _, p := range products {
+		fmt.Println(p.Id, p.Name, p.Category, p.Price)
+	}
+
+	json.NewEncoder(w).Encode(&products)
 
 }
 
