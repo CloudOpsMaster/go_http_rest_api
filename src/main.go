@@ -221,6 +221,7 @@ func updateProduct(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(products)
 }
 
+// Delete product by id
 func deleteProduct(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "DELETE" {
 		http.Error(w, "405 method not allowed", http.StatusMethodNotAllowed)
@@ -229,15 +230,31 @@ func deleteProduct(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	/*
-		params := mux.Vars(r)
-		for index, item := range products {
-			if item.Id == params["id"] {
-				products = append(products[:index], products[index+1:]...)
-				break
-			}
-		}
-		json.NewEncoder(w).Encode(products)
-	*/
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+		"password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
+	db, err := sql.Open("postgres", psqlInfo)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	params := mux.Vars(r)
+
+	var ID = params["id"]
+
+	result, err := db.Exec(`DELETE FROM products WHERE id = $1`, ID)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Product was deleted")
+
+	json.NewEncoder(w).Encode(&result)
 
 }
