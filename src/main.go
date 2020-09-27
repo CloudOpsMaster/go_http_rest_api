@@ -131,6 +131,7 @@ func getProducts(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// Get Product by id
 func getProduct(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		http.Error(w, "405 method not allowed", http.StatusMethodNotAllowed)
@@ -138,16 +139,52 @@ func getProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	params := mux.Vars(r)
-	for _, item := range products {
-		if item.Id == params["id"] {
-			json.NewEncoder(w).Encode(item)
-			return
-		}
+
+	/*	params := mux.Vars(r)
+		for _, item := range products {
+			if item.Id == params["id"] {
+				json.NewEncoder(w).Encode(item)
+				return
+			}
+		} */
+
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+		"password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
+	db, err := sql.Open("postgres", psqlInfo)
+	if err != nil {
+		panic(err)
 	}
-	json.NewEncoder(w).Encode(&Product{})
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		panic(err)
+	}
+
+	params := mux.Vars(r)
+	var ID = params["id"]
+
+	row := db.QueryRow(`select * from products WHERE id = $1`, ID)
+
+	products := []Product{}
+
+	p := Product{}
+	row.Scan(&p.Id, &p.Name, &p.Category, &p.Price)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	products = append(products, p)
+
+	fmt.Println(p.Id, p.Name, p.Category, p.Price)
+	//defer row.Close()
+
+	json.NewEncoder(w).Encode(&products)
+
 }
 
+// Create Product item
 func createProduct(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, "405 method not allowed", http.StatusMethodNotAllowed)
@@ -191,12 +228,16 @@ func deleteProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	params := mux.Vars(r)
-	for index, item := range products {
-		if item.Id == params["id"] {
-			products = append(products[:index], products[index+1:]...)
-			break
+
+	/*
+		params := mux.Vars(r)
+		for index, item := range products {
+			if item.Id == params["id"] {
+				products = append(products[:index], products[index+1:]...)
+				break
+			}
 		}
-	}
-	json.NewEncoder(w).Encode(products)
+		json.NewEncoder(w).Encode(products)
+	*/
+
 }
