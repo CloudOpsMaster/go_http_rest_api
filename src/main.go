@@ -5,12 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/rand"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+
 )
 
 const (
@@ -45,6 +44,12 @@ var products = []Product{
 	Product{Id: "3", Name: "Red Pan", Category: "for school", Price: 140},
 }
 
+type JsonResponse struct {
+	Type    string    `json:"type"`
+	Data    []Product `json:"data"`
+	Message string    `json:"message"`
+}
+
 func main() {
 
 	// postgres
@@ -77,7 +82,7 @@ func main() {
 	// server
 	fmt.Printf("Start server \n")
 
-	if err := http.ListenAndServe(":8080", r); err != nil {
+	if err := http.ListenAndServe(":8081", r); err != nil {
 		log.Fatal(err)
 	}
 
@@ -192,11 +197,55 @@ func createProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+
+	/*
+		var product Product
+		_ = json.NewDecoder(r.Body).Decode(&product)
+		product.Id = strconv.Itoa(rand.Intn(1000))
+		products = append(products, product)
+		json.NewEncoder(w).Encode(product)
+
+	*/
+
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+		"password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
+	db, err := sql.Open("postgres", psqlInfo)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		fmt.Println(err)
+
+	}
+
 	var product Product
 	_ = json.NewDecoder(r.Body).Decode(&product)
-	product.Id = strconv.Itoa(rand.Intn(1000))
-	products = append(products, product)
+
+	//id := product.Id
+	//name := product.Name
+	//category := product.Category
+	//price := product.Price
+
+	var response = JsonResponse{}
+
+	if product.Name == "" || product.Category == "" {
+		response = JsonResponse{Type: "error", Message: "You are missing ID or Name, Category parameter."}
+	} else {
+
+		query := `INSERT INTO products(id, name,  category, price) VALUES($1, $2, $3, $4`
+		_, err := db.Exec(query, product.Id, product.Name, product.Category, product.Price)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+	}
+	fmt.Println(product.Id, product.Name, product.Category, product.Price)
 	json.NewEncoder(w).Encode(product)
+	json.NewEncoder(w).Encode(response)
 
 }
 
@@ -205,7 +254,7 @@ func updateProduct(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "405 method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
+	/* w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 	for index, item := range products {
 		if item.Id == params["id"] {
@@ -219,6 +268,41 @@ func updateProduct(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	json.NewEncoder(w).Encode(products)
+
+	*/
+	w.Header().Set("Content-Type", "application/json")
+
+	params := mux.Vars(r)
+
+	var product Product
+	_ = json.NewDecoder(r.Body).Decode(&product)
+
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+		"password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
+	db, err := sql.Open("postgres", psqlInfo)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	var ID = params["id"]
+
+	result, err := db.Exec(`UPDATE products SET name = $2, category = $3, price = $4 WHERE id = $1`, ID, product.Name, product.Category, product.Price)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Product was deleted")
+
+	json.NewEncoder(w).Encode(&result)
+
 }
 
 // Delete product by id
