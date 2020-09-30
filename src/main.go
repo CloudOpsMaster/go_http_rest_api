@@ -9,7 +9,6 @@ import (
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
-
 )
 
 const (
@@ -230,12 +229,12 @@ func createProduct(w http.ResponseWriter, r *http.Request) {
 	//category := product.Category
 	//price := product.Price
 
-	result, err := db.Exec(`INSERT INTO products(id, name,  category, price) VALUES($1, $2, $3, $4)`, product.Id, product.Name, product.Category, product.Price)
+	result, err := db.Exec(`INSERT INTO products(name,  category, price) VALUES($1, $2, $3)`, product.Name, product.Category, product.Price)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println("Product was created")
+	fmt.Println("Product was created, id = " + product.Id)
 
 	json.NewEncoder(w).Encode(&result)
 
