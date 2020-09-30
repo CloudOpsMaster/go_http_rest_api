@@ -230,22 +230,14 @@ func createProduct(w http.ResponseWriter, r *http.Request) {
 	//category := product.Category
 	//price := product.Price
 
-	var response = JsonResponse{}
-
-	if product.Name == "" || product.Category == "" {
-		response = JsonResponse{Type: "error", Message: "You are missing ID or Name, Category parameter."}
-	} else {
-
-		query := `INSERT INTO products(id, name,  category, price) VALUES($1, $2, $3, $4`
-		_, err := db.Exec(query, product.Id, product.Name, product.Category, product.Price)
-		if err != nil {
-			fmt.Println(err)
-		}
-
+	result, err := db.Exec(`INSERT INTO products(id, name,  category, price) VALUES($1, $2, $3, $4)`, product.Id, product.Name, product.Category, product.Price)
+	if err != nil {
+		panic(err)
 	}
-	fmt.Println(product.Id, product.Name, product.Category, product.Price)
-	json.NewEncoder(w).Encode(product)
-	json.NewEncoder(w).Encode(response)
+
+	fmt.Println("Product was created")
+
+	json.NewEncoder(w).Encode(&result)
 
 }
 
@@ -299,7 +291,7 @@ func updateProduct(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	fmt.Println("Product was deleted")
+	fmt.Println("Product was updated")
 
 	json.NewEncoder(w).Encode(&result)
 
