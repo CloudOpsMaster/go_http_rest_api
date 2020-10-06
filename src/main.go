@@ -6,9 +6,15 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+
+	"github.com/go-redis/redis"
+
+	//"github.com/joho/godotenv"
+	// "os"
 )
 
 const (
@@ -18,6 +24,8 @@ const (
 	password = "555555"
 	dbname   = "store"
 )
+
+
 
 func test(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Request URL: " + r.RequestURI)
@@ -29,6 +37,31 @@ func test(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(k + " = " + v[0])
 	}
 }
+
+/*
+	// load .env file
+	err := godotenv.Load()
+	if err != nil {
+	  log.Fata(err)
+	}
+  
+	
+ var cenvHost := os.Getenv("HOST")
+ var envPort := os.Getenv( "PORT")
+ var envUser := os.Getenv("USERNAME")
+ var envPassword := os.Getenv("PASS")
+ var envDBname := os.Getenv("NAME")
+ 
+
+const (
+	host     = envHost
+	port     = envPort
+	user     = envUser
+	password = envPassword 
+	dbname   = envDBname
+)
+
+*/
 
 type Product struct {
 	Id       string `json: "id"`
@@ -50,6 +83,16 @@ type JsonResponse struct {
 }
 
 func main() {
+
+	client := redis.NewClient(&redis.Options{
+		Addr: "localhost:6379",
+		Password: "",
+		DB: 0,
+	})
+
+	pong, err := client.Ping().Result()
+	fmt.Println(pong, err)
+
 
 	// postgres
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
@@ -151,7 +194,7 @@ func getProduct(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		} */
-
+// postgres
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbname)
