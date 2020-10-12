@@ -6,9 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-
 	// "os"
-	// local
 
 	"github.com/Maks0123/go_http_rest_api/src/app/Controllers"
 	"github.com/Maks0123/go_http_rest_api/src/app/Models"
@@ -16,6 +14,7 @@ import (
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 	//"github.com/joho/godotenv"
+
 )
 
 func test(w http.ResponseWriter, r *http.Request) {
