@@ -27,6 +27,8 @@ func GetProducts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	// postgres
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
