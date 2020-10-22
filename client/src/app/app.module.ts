@@ -8,12 +8,14 @@ import { ProductLayoutComponent } from './shared/layouts/product-layout/product-
 import { Routes, RouterModule } from '@angular/router';
 import { AppRoutingModule } from './app-routing/app-routing.module';
 import { ProductService } from './product.service';
+import { GetProductComponent } from './get-product/get-product.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     ProductPageComponent,
-    ProductLayoutComponent
+    ProductLayoutComponent,
+    GetProductComponent
   ],
   imports: [
     AppRoutingModule,

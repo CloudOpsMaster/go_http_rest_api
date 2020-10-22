@@ -1,0 +1,16 @@
+
+  <div class="row">
+    <div class="col s12 m6">
+      <div class="card blue-grey darken-1">
+        <div class="card-content white-text" *ngFor='let product of product$'>
+          <span class="card-title">{{ product.Id}}) {{ product.Name}}</span>
+          <p>{{ product.Category}}</p>
+          <p>{{ product.Price}} </p>
+        </div>
+        <div class="card-action">
+            <a href="">RETURN</a>
+            <a href="">DELETE</a>
+        </div>
+      </div>
+    </div>
+  </div>
